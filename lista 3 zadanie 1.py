@@ -1,0 +1,56 @@
+import os
+import time 
+from datetime import datetime
+import shutil
+
+def pliki_do_skopiowania(rozszerzenie, katalog, liczba_dni):
+
+    """W podanym katalogu znajdź pliki o zadanym rozszerzeniu, zmodyfikowane w ciągu ostatnich n dni, i zapisz je w katalogu Backup\Copy-X, 
+    gdzie X - dzisiejsza data.
+       
+    Input:
+    rozszerzenie(str) - zadane rozszerzenie.
+    katalog(str) - ścieżka do katalogu, którego pliki zostaną skopiowane.
+    liczba_dni(int) - liczba dni, w ciągu których zostały zmodyfikowane pliki.
+    """
+    if type(liczba_dni) != int:
+        return "Podaj liczbę całkowitą!"
+    if type(rozszerzenie) != str:
+        return "Nie można odszukać rozszerzenia!"
+    
+    dzisiejsza_data = datetime.now()
+    data_w_nazwie_pliku = dzisiejsza_data.strftime("%Y-%m-%d")
+
+    lista_plikow = []
+    for ścieżka, foldery, pliki in os.walk(katalog):
+        for nazwa_pliku in pliki:
+            if nazwa_pliku.endswith(rozszerzenie):
+                ścieżka_pliku = os.path.join(ścieżka, nazwa_pliku)
+                lista_plikow.append(ścieżka_pliku)
+
+    sprawdzenie_dat = []
+    for plik in lista_plikow:
+        czas_ostatniej_modyfikacji = os.path.getmtime(plik)
+        dzisiaj = time.time()
+        if dzisiaj - czas_ostatniej_modyfikacji < (liczba_dni*3600*24):
+            sprawdzenie_dat.append(plik)
+
+    katalog_docelowy  = r'C:\Users\magda\Desktop\Backup\copy-' + data_w_nazwie_pliku 
+    if not os.path.exists(katalog_docelowy):
+        os.mkdir(katalog_docelowy)
+    nowy_katalog = r'C:\Users\magda\Desktop\Backup\copy-' + data_w_nazwie_pliku
+
+
+    for i in range(len(sprawdzenie_dat)):
+        rozdzielona_ścieżka = os.path.split(sprawdzenie_dat[i])
+        skopiowany_plik = open("kopia_" + rozdzielona_ścieżka[1], "w")
+        shutil.copy2(sprawdzenie_dat[i], r'C:\Users\magda\Desktop\Backup\copy-' + data_w_nazwie_pliku + "\\" + "kopia_" + rozdzielona_ścieżka[1])
+        skopiowany_plik.close()
+
+    return "Zapisano pliki w podanym folderze."
+
+rozszerzenie = '.py'
+katalog_do_przejrzenia = r'C:\Users\magda\Desktop\Lista 2'
+liczba_dni = 25
+
+pliki_do_skopiowania(rozszerzenie, katalog_do_przejrzenia, liczba_dni)
