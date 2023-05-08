@@ -1,0 +1,58 @@
+import argparse
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy.integrate import odeint
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-N", "--number", action = 'store', help="Liczba osób w społeczeństwie", default = 1000)
+parser.add_argument("-S", "--susceptible", action = 'store', help="Początkowa liczba zdrowych", default = 999)
+parser.add_argument("-E", "--exposed", action = 'store', help="Początkowa liczba zakażonych niezarażających", default = 1)
+parser.add_argument("-I", "--infected", action = 'store', help="Początkowa liczba zakażonych zarażających", default = 0)
+parser.add_argument("-R", "--recovered", action = 'store', help="Początkowa liczba wyzdrowiałych", default = 0)
+parser.add_argument("-b", "--infectionrate", action = 'store', help="Wartość współczynnika zakaźności", default = 1.34)
+parser.add_argument("-s", "--incubationrate", action = 'store', help="Wartość współczynnika inkubacji", default = 0.19)
+parser.add_argument("-g", "--recoveryrate", action = 'store', help="Wartość współczynnika wyzdrowień", default = 0.34)
+args = parser.parse_args()
+
+t = np.linspace(0, 100)
+
+n = int(args.number)
+s = int(args.susceptible)
+e = int(args.exposed)
+i = int(args.infected)
+r = int(args.recovered)
+beta = float(args.infectionrate)
+sigma = float(args.incubationrate)
+gamma = float(args.recoveryrate)
+
+def pochodna(f, t, n, beta, gamma, sigma):
+    
+    """Ustal równania różniczkowe w zależności od podanych parametrów.
+    
+    Input:
+    n(int) - całkowita liczba osób w społeczeństwie.
+    t(float) - czas, w którym zachodzą zmiany.
+    beta(float) - współczynnik zakaźności (ile osób średnio się zaraża).
+    gamma(float) - współczynnik wyzdrowień (średni czas powrotu do zdrowia).
+    sigma(float) - współczynnik inkubacji (średni czas rozwinięcia się infekcji).
+    Output:
+    dsdt, dedt, didt, drdt - pochodne liczby osów w każdej grupie po czasie.
+    """
+    s, e, i, r = f
+    dsdt = -beta*s*i/n
+    dedt = beta*s*i/n - sigma*e
+    didt = sigma*e - gamma*i
+    drdt = gamma*i
+    return dsdt, dedt, didt, drdt
+
+warunki_poczatkowe = s, e, i, r
+rozwiazanie = odeint(pochodna, warunki_poczatkowe, t, args=(n, beta, gamma, sigma))
+S, E, I, R = rozwiazanie.T
+
+plt.plot(t, S, 'g')
+plt.plot(t, E, 'r')
+plt.plot(t, I, 'y')
+plt.plot(t, R, 'b')
+plt.xlabel('czas')
+plt.ylabel('liczba osób')
+plt.show()
