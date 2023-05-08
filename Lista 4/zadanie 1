@@ -1,0 +1,49 @@
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy.integrate import odeint
+import sys
+
+parametry = [sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6], sys.argv[7], sys.argv[8]]
+
+n = int(parametry[0])
+s = int(parametry[1])
+e = int(parametry[2])
+i = int(parametry[3])
+r = int(parametry[4])
+beta = float(parametry[5])
+sigma = float(parametry[6])
+gamma = float(parametry[7])
+
+t = np.linspace(0, 100)
+
+def pochodna(f, t, n, beta, gamma, sigma):
+
+    """Ustal równania różniczkowe w zależności od podanych parametrów.
+    
+    Input:
+    n(int) - całkowita liczba osób w społeczeństwie.
+    t(float) - czas, w którym zachodzą zmiany.
+    beta(float) - współczynnik zakaźności (ile osób średnio się zaraża).
+    gamma(float) - współczynnik wyzdrowień (średni czas powrotu do zdrowia).
+    sigma(float) - współczynnik inkubacji (średni czas rozwinięcia się infekcji).
+    Output:
+    dsdt, dedt, didt, drdt - pochodne liczby osów w każdej grupie po czasie.
+    """
+    s, e, i, r = f
+    dsdt = -beta*s*i/n
+    dedt = beta*s*i/n - sigma*e
+    didt = sigma*e - gamma*i
+    drdt = gamma*i
+    return dsdt, dedt, didt, drdt
+
+warunki_poczatkowe = s, e, i, r
+rozwiazanie = odeint(pochodna, warunki_poczatkowe, t, args=(n, beta, gamma, sigma))
+S, E, I, R = rozwiazanie.T
+
+plt.plot(t, S, 'g')
+plt.plot(t, E, 'r')
+plt.plot(t, I, 'y')
+plt.plot(t, R, 'b')
+plt.xlabel('czas')
+plt.ylabel('liczba osób')
+plt.show()
