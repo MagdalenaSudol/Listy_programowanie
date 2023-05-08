@@ -1,0 +1,55 @@
+import networkx as nx
+import matplotlib.pyplot as plt
+import random
+from PIL import Image
+import os
+
+graf = nx.erdos_renyi_graph(10, 0.5)
+
+def symulacja(graf):
+
+    """Symuluj błądzenie agenta po zadanym grafie w 10 powtórzeniach - po każdym powtórzeniu zapisz graf pod podaną nazwą.
+    
+    Input:
+    graf - graf o określonych parametrach.
+    """
+    pozycja = nx.spring_layout(graf)
+    color = []
+    n = random.randint(0, 9)
+
+    for i in range(10):
+    
+        neighbours = list(graf.neighbors(n)) 
+
+        for node in graf:
+            if node == n:
+                color.append('red')
+            else:
+                color.append('blue')
+        nx.draw(graf, pos = pozycja, with_labels = True, node_color = color)
+        plt.savefig(r'C:\Users\magda\Desktop\Zapisane grafy' + '\\' + 'graf_' + str(i) + '.png')
+        plt.clf()
+
+        n = neighbours[random.randint(0, len(neighbours)-1)]
+        color = []
+
+symulacja(graf)
+
+def stworzenie_gifa(ścieżka_do_folderu):
+
+    """Stwórz gifa z plików znajdujących się w podanym folderze i zapisz go pod nazwą 'animacja_przejść_agenta.gif'.
+    
+    Input:
+    ścieżka_do_folderu - ścieżka do folderu, w którym znajdują się pliki, które posłużą do wygenerowania gifa.
+    """
+    lista_plikow = []
+    for ścieżka, foldery, pliki in os.walk(ścieżka_do_folderu):
+        for nazwa_pliku in pliki:
+            ścieżka_pliku = os.path.join(ścieżka, nazwa_pliku)
+            lista_plikow.append(ścieżka_pliku)
+
+    obrazy = [Image.open(image) for image in lista_plikow]
+    obraz_pierwszy = obrazy[0]
+    obraz_pierwszy.save(ścieżka_do_folderu + '\\' + 'animacja_przejść_agenta.gif', format = "GIF", append_images = obrazy, save_all = True, duration = 1000, loop = 0)
+
+stworzenie_gifa(r'C:\Users\magda\Desktop\Zapisane grafy')
