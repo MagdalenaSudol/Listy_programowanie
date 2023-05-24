@@ -1,0 +1,98 @@
+import tkinter as tk
+import requests
+import json
+from tkinter import ttk
+
+strona = 'https://api.nbp.pl/api/exchangerates/tables/a'
+try: 
+    zawartosc = requests.get(strona)
+    kurs = open(r'C:\Users\magda\Desktop\Kursy_walut\Kurs.json', 'wb')
+    kurs.write(zawartosc.content)
+    kurs.close()
+    plik_json = r'C:\Users\magda\Desktop\Kursy_walut\Kurs.json'
+    with open(plik_json, "r") as tabela:
+        dane = json.load(tabela)
+        slownik = dane[0]
+        lista_walut = slownik['rates']       
+except:
+    plik_json = r'C:\Users\magda\Desktop\Kursy_walut\Kurs.json'
+    with open(plik_json, "r") as tabela:
+        dane = json.load(tabela)
+        slownik = dane[0]
+        lista_walut = slownik['rates']
+
+waluty = [lista_walut[i]['currency'] for i in range(32)]
+waluty.append('złoty')
+
+def przeliczenie():
+    """Przelicz podaną kwotę z jednej wybranej waluty na drugą wybraną walutę."""
+    
+    pierwsza_wybrana_waluta = str(n.get())
+    druga_wybrana_waluta = str(k.get())
+    kurs_pierwszej_waluty = 0
+    kurs_drugiej_waluty = 0
+    kwota = float(pole_pierwszej_waluty.get())
+
+    for i in range(len(lista_walut)):
+        if lista_walut[i]['currency'] == pierwsza_wybrana_waluta:
+            kurs_pierwszej_waluty += lista_walut[i]['mid']
+        elif lista_walut[i]['currency'] == druga_wybrana_waluta:
+            kurs_drugiej_waluty += lista_walut[i]['mid']
+
+    if pierwsza_wybrana_waluta == 'złoty':
+        kurs_pierwszej_waluty += 1
+
+    if druga_wybrana_waluta == 'złoty':
+        kurs_drugiej_waluty += 1
+
+    wynik = (float(kurs_pierwszej_waluty)/float(kurs_drugiej_waluty))*kwota
+    zaokrąglony_wynik = round(wynik, 2)
+    pole_z_wynikiem.config(state='normal')
+    pole_z_wynikiem.delete('1.0', tk.END)
+    pole_z_wynikiem.insert(tk.END, zaokrąglony_wynik)
+    pole_z_wynikiem.config(state='disabled')
+
+def koniec():
+    """Zakończ działanie poprzez zamknięcie okna."""
+
+    okno.destroy()
+
+okno = tk.Tk()
+okno.title("Kalkulator walut")
+okno.resizable(width=False, height=False)
+okno.config(bg='#856ff8')
+okno.geometry('300x300')
+pusty1 = tk.Label(okno, bg = '#856ff8')
+pusty2 = tk.Label(okno, bg = '#856ff8')
+pusty3 = tk.Label(okno, bg = '#856ff8')
+pusty4 = tk.Label(okno, bg = '#856ff8')
+pusty5 = tk.Label(okno, bg = '#856ff8')
+tytuł = tk.Label(okno, text="Kalkulator walut", font=('calibre', 10, 'normal'))
+ilosc_pierwszej_waluty = tk.Label(okno, text='kwota w pierwszej walucie:', font=('calibre', 10, 'normal'))
+ilosc_drugiej_waluty = tk.Label(okno, text='kwota w drugiej walucie:', font=('calibre', 10, 'normal'))
+przycisk_oblicz = tk.Button(okno, text = 'Oblicz', command=przeliczenie)
+k = tk.StringVar()
+n = tk.StringVar()
+m = tk.StringVar()
+przycisk_końca = tk.Button(okno, text = 'Zakończ', command=koniec)
+pole_pierwszej_waluty = tk.Entry(okno, textvariable=m, font=('calibre', 10, 'normal'))
+wybór_waluty_początkowej = ttk.Combobox(okno, width = 20, textvariable=n)
+wybór_waluty_końcowej = ttk.Combobox(okno, width = 20, textvariable=k)
+wybór_waluty_początkowej['values'] = tuple(waluty)
+wybór_waluty_końcowej['values'] = tuple(waluty)
+pole_z_wynikiem = tk.Text(okno, state='disabled', width = 20, height=0)
+tytuł.pack()
+pusty1.pack()
+ilosc_pierwszej_waluty.pack()
+pusty2.pack()
+pole_pierwszej_waluty.pack()
+wybór_waluty_początkowej.pack()
+pusty3.pack()
+ilosc_drugiej_waluty.pack()
+wybór_waluty_końcowej.pack()
+pole_z_wynikiem.pack()
+pusty4.pack()
+przycisk_oblicz.pack()
+pusty5.pack()
+przycisk_końca.pack()
+okno.mainloop()
