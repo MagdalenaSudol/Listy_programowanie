@@ -1,0 +1,311 @@
+import pygame
+import random
+import sys
+from PIL import Image
+
+from pygame.locals import (
+        RLEACCEL, 
+        K_UP,
+        K_DOWN,
+        K_LEFT,
+        K_RIGHT,
+        K_ESCAPE,
+        K_SPACE,
+        KEYDOWN,
+        KEYUP,
+        QUIT
+        )    
+
+
+pygame.init()
+pygame.mixer.init() 
+sound_coin = pygame.mixer.Sound('coin.wav')
+sound_rock = pygame.mixer.Sound('rock.mp3')
+
+white = (255, 255, 255)
+gray = (119, 118, 110)
+black = (0, 0, 0)
+red = (255, 0, 0)
+green = (0, 200, 0)
+blue = (0, 0, 200)
+bright_red = (255, 0, 0)
+bright_green = (0, 255, 0)
+bright_blue = (0, 0, 255)
+display_width = 800
+display_height = 600
+FPS = 30
+
+game_screen = pygame.display.set_mode((display_width, display_height))
+pygame.display.set_caption("Treasure hunt")
+clock = pygame.time.Clock()
+
+background = Image.open("voodoo_cactus_underwater.jpg")
+background = background.resize((800, 600))
+background = background.save("new_sea_background.jpg")
+background_image = pygame.image.load("new_sea_background.jpg").convert()
+player = Image.open("chest.png")
+player = player.resize((50, 50))
+player = player.save("new_chest.png")
+player_image = pygame.image.load("new_chest.png").convert()
+collecting_objects_image = pygame.image.load("coin 2.png").convert()
+
+running = True
+game_over = True
+font_name = pygame.font.match_font('arial')
+best_scores_value = [0,0,0]
+obstacles = pygame.sprite.Group()
+collectingobjects = pygame.sprite.Group()
+
+def draw_text(surf, text, size, x, y):
+    """Napisz na ekranie tekst.
+
+        Input:
+        surf - powierzchnia, na której zostanie napisany tekst.
+        text(string) - tekst, który ma zostać umieszczony.
+        size(int) - rozmiar czcionki.
+        x - współrzędna x środka tekstu.
+        y - współrzędna y środka tekstu.
+        """
+    font = pygame.font.Font(font_name, size)
+    text_surface = font.render(text, True, black)
+    text_rect = text_surface.get_rect()
+    text_rect.midtop = (x,y)
+    surf.blit(text_surface,text_rect)
+
+def intro_loop():
+    """Wywołaj ekran startowy."""
+    intro = True
+
+    while intro:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+        game_screen.blit(background_image, (0, 0))
+        draw_text(game_screen, "Treasure hunt", 50, 400, 100)
+        button("START", 150, 320, 100, 50, green, bright_green, "play")
+        button("ZAKOŃCZ", 550, 320, 100, 50, red, bright_red, "quit")
+        button("ZASADY", 300, 320, 200, 50, blue, bright_blue, "intro")
+        button("O AUTORZE", 450, 380, 200, 50, blue, bright_blue, "O autorze")
+        button("NAJLEPSZE WYNIKI", 150, 380, 200, 50, blue, bright_blue, "najlepsze wyniki")
+        pygame.display.update()
+        clock.tick(50)
+  
+  
+def button(msg, x, y, w, h, starting_colour, end_colour, action=None):
+    """Umieść przyciski na ekranie.
+
+        Input:
+        msg(string) - wiadomość, która ma zostać umieszczona na przycisku.
+        x - współrzędna x, od której ma się zaczynać tekst.
+        y - współrzędna y, od której ma się zaczynać tekst.
+        w - szerokość przycisku.
+        h - wysokość przycisku.
+        ic - kolor przycisku przed kliknięciem.
+        ac - kolor przycisku po kliknięciu.
+        action - funkcja, która ma zostać wywołana po kliknięciu przycisku.
+        """
+    mouse = pygame.mouse.get_pos()
+    click = pygame.mouse.get_pressed()
+    if x+w > mouse[0] > x and y+h > mouse[1] > y:
+        pygame.draw.rect(game_screen, end_colour, (x, y, w, h))
+        if click[0] == 1 and action != None:
+            if action == "play":
+                game()
+            elif action == "quit":
+                pygame.quit()
+                quit()
+                sys.exit()
+            elif action == "intro":
+                introduction()
+            elif action == "menu":
+                intro_loop()
+            elif action == "O autorze":
+                author_note()
+            elif action == "najlepsze wyniki":
+                best_scores()
+  
+    else:
+        pygame.draw.rect(game_screen,starting_colour,(x, y, w, h))
+        draw_text(game_screen, msg, 20, x+w/2, y+12)
+
+def author_note():
+    """Wywołaj na ekran notkę o autorze."""
+    author_note = True
+    while author_note:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+        game_screen.blit(background_image, (0, 0))
+        draw_text(game_screen, "O autorze:", 50, 400, 100)
+        draw_text(game_screen, "Magdalena Sudół - studentka pierwszego roku Matematyki Stosowanej na Politechnice Wrocławskiej.", 20, 400, 200)
+        button("POWRÓT", 600, 450, 100, 50, blue, bright_blue, "menu")
+        pygame.display.update()
+        clock.tick(30)
+
+def best_scores():
+    """Wywołaj na ekran informację o najlepszych wynikach."""
+    best_scores = True
+    while best_scores:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+        game_screen.blit(background_image, (0, 0))
+        draw_text(game_screen, "Najlepsze wyniki:", 50, 400, 100)
+        draw_text(game_screen, "1.", 20, 200, 200)
+        draw_text(game_screen, "2.", 20, 200, 250)
+        draw_text(game_screen, "3.", 20, 200, 300)
+
+        draw_text(game_screen, str(best_scores_value[2]), 20, 250, 200)
+        draw_text(game_screen, str(best_scores_value[1]), 20, 250, 250)
+        draw_text(game_screen, str(best_scores_value[0]), 20, 250, 300)
+
+        button("POWRÓT", 650, 450, 100, 50, blue, bright_blue, "menu")
+        pygame.display.update()
+        clock.tick(30)
+
+def introduction():
+    """Wywołaj na ekran informacje o zasadach gry."""
+    introduction = True
+    while introduction:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+        game_screen.blit(background_image, (0, 0))
+        draw_text(game_screen, "Zasady:", 50, 400, 100)
+        draw_text(game_screen, "Omijaj przeszkody w postaci kamieni i zbieraj skarb.", 20, 400, 200)
+        draw_text(game_screen, "Poruszaj się strzałkami w lewo i w prawo.", 20, 400, 250)
+        draw_text(game_screen, "Masz 3 życia, jeżeli zbierzesz kamień - tracisz życie.", 20, 400, 300)
+        button("POWRÓT", 600, 450, 100, 50, blue, bright_blue, "menu")
+        pygame.display.update()
+        clock.tick(30)
+
+ADDOBSTACLE = pygame.USEREVENT + 1
+pygame.time.set_timer(ADDOBSTACLE, 3000)
+ADDCOLLECTINGOBJECT = pygame.USEREVENT + 2
+pygame.time.set_timer(ADDCOLLECTINGOBJECT, 2000)
+
+def game():
+    """Rozpocznij grę."""
+    running = True
+    score = 0
+    player = Player()
+    all_sprites = pygame.sprite.Group()
+    all_sprites.add(player)
+    while running:      
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LEFT:
+                    player.xvelocity = -10
+                if event.key == pygame.K_RIGHT:
+                    player.xvelocity = 10
+            elif event.type == pygame.KEYUP:
+                if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
+                    player.xvelocity = 0
+            elif event.type == ADDOBSTACLE:
+                new_obstacle = obstacle()
+                obstacles.add(new_obstacle)
+                all_sprites.add(new_obstacle)
+            elif event.type == ADDCOLLECTINGOBJECT:
+                new_coin = CollectingObject()
+                collectingobjects.add(new_coin)
+                all_sprites.add(new_coin)
+                    
+
+        player.update()
+        obstacles.update()
+        collectingobjects.update()
+        
+    
+        game_screen.blit(background_image, (0, 0))
+        for everyone in all_sprites:
+            game_screen.blit(everyone.surf, everyone.rect)
+            draw_text(game_screen, "score:" + str(score), 30, 700, 100)
+            draw_text(game_screen, "lives:" + str(player.lives), 30, 700, 140)
+
+        if pygame.sprite.spritecollideany(player, obstacles):
+            for obst in obstacles:
+                obst.kill()
+            for col in collectingobjects:
+                col.kill()
+            sound_rock.play()
+            player.lives -= 1
+
+        collecting_object_collision = pygame.sprite.spritecollideany(player, collectingobjects)
+        if collecting_object_collision:
+            collided_collecting_object = collecting_object_collision
+            collided_collecting_object.kill()
+            sound_coin.play()
+            score += 1
+
+        if player.lives == 0:
+            best_scores_value.sort()
+            if score >= best_scores_value[0]:
+                best_scores_value[0] = score
+            best_scores_value.sort()
+            intro_loop()
+
+        pygame.display.flip()
+        clock.tick(FPS)
+
+class Player(pygame.sprite.Sprite):
+    def __init__(self):
+        """Zainicjuj postać gracza."""
+        super(Player, self).__init__()
+        self.surf = pygame.image.load("new_chest.png").convert()
+        self.surf.set_colorkey(black, RLEACCEL)
+        self.rect = self.surf.get_rect()
+        self.rect.centerx = display_width/2
+        self.rect.top = display_height - 50
+        self.lives = 3
+        self.xvelocity = 0
+        self.yvelocity = 0
+
+    def update(self):
+        """Zmień pozycję gracza na ekranie."""
+        self.rect.move_ip((self.xvelocity,self.yvelocity))
+        if self.rect.left < 0:
+           self.rect.left = 0
+        elif self.rect.right > display_width:
+           self.rect.right = display_width
+
+
+class obstacle(pygame.sprite.Sprite):
+    def __init__(self):
+        """Zainicjuj postać przeszkody (kamienia)."""
+        super(obstacle, self).__init__()
+        self.surf = pygame.image.load("stone-3.png").convert()
+        self.surf.set_colorkey(black, RLEACCEL)
+        self.rect = self.surf.get_rect(center=(random.randint(0,display_width),0))
+        self.speed = 5
+
+    def update(self):
+        """Zmień pozycję przeszkody na ekranie."""
+        self.rect.move_ip((0, self.speed))
+        if self.rect.top > display_height:  
+            self.kill()
+    
+
+class CollectingObject(pygame.sprite.Sprite):
+    def __init__(self):
+        """Zainicjuj postać rzeczy do zebrania (monety)."""
+        super(CollectingObject, self).__init__()
+        self.surf = pygame.image.load("coin 2.png").convert()
+        self.surf.set_colorkey(white, RLEACCEL)
+        self.rect = self.surf.get_rect(center=(random.randint(0, display_width),0))
+        self.speed = 5
+
+    def update(self):
+        """Zmień pozycję obiektu na ekranie."""
+        self.rect.move_ip(0, self.speed)
+        if self.rect.top > display_height: 
+            self.kill()
+
+intro_loop()
+
+pygame.quit() 
